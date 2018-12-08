@@ -6,6 +6,11 @@ import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Point2D.Float;
+
+import com.sun.media.sound.SoftMixingSourceDataLine;
+
+import me.jjfoley.gfx.IntPoint;
+
 import java.awt.geom.Rectangle2D;
 
 public class Tower implements Comparable<Tower> {
@@ -17,7 +22,7 @@ public class Tower implements Comparable<Tower> {
 	/**
 	 * Position of tower on board.
 	 */
-	Point2D.Float pos;
+	IntPoint pos;
 	/**
 	 * World we are in
 	 */
@@ -38,10 +43,14 @@ public class Tower implements Comparable<Tower> {
 	 * 
 	 * @param position
 	 */
-	public Tower(Point2D position, World world) {
-		this.pos = (Float) position;
+	public Tower(IntPoint position, World world) {
+		System.out.println(position);
+		int x = (int) (position.getX() * 60);
+		int y = (int) (position.getY() * 60);
+		this.pos = new IntPoint(x, y);
 		this.w = world;
 		this.range = 200;
+		System.out.println(this.pos);
 	}
 
 	/**
@@ -50,13 +59,15 @@ public class Tower implements Comparable<Tower> {
 	 * @param g
 	 */
 	public void draw(Graphics2D g) {
-		g.setColor(new Color(255, 255, 255, 100));
+		Graphics2D g2 = (Graphics2D) g.create();
+		g2.setColor(new Color(255, 255, 255, 50));
 		Shape range = new Ellipse2D.Double(pos.getX() - this.range, pos.getY() - this.range, this.range * 2,
 				this.range * 2);
-		g.fill(range);
-		g.setColor(Color.white);
-		Shape body = new Rectangle2D.Double(pos.getX() - 15, pos.getY() - 25, 30, 50);
-		g.fill(body);
+		g2.fill(range);
+		g2.setColor(Color.white);
+		Shape body = new Rectangle2D.Double(pos.getX() - 15, pos.getY() - 15, 30, 30);
+		g2.fill(body);
+		g2.dispose();
 	}
 
 	/**
@@ -76,6 +87,7 @@ public class Tower implements Comparable<Tower> {
 			sumTime = 0;
 			Projectile p = new Projectile(this.w, e, false, this.pos);
 			w.addProjectile(p);
+			System.out.println("projectile");
 		}
 	}
 

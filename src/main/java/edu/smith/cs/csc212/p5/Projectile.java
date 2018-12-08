@@ -49,8 +49,9 @@ public class Projectile {
 		this.w = world;
 		this.e = target;
 		this.setDestination();
+
 		this.isTracker = homing;
-		this.location = (Float) loc;
+		this.location = new Point2D.Float((float) loc.getX(), (float) loc.getY());
 		// Adds itself to the World's list of projectiles.
 		w.addProjectile(this);
 	}

@@ -44,6 +44,7 @@ public class FishHome {
 
 	public void draw(Graphics2D g) {
 		Graphics2D scale = (Graphics2D) g.create();
+		scale.translate(x * w.getTileSize(), y * w.getTileSize());
 		scale.scale(6.0, 6.0);
 		scale.setColor(Color.black);
 		scale.fillPolygon(roof);

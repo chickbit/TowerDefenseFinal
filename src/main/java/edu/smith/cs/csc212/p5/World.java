@@ -42,6 +42,7 @@ public class World {
 	double coolDown = 3;
 	double sumTime = 0;
 	FishHome house;
+	FishHome startHouse;
 
 	/**
 	 * Constructor
@@ -62,7 +63,9 @@ public class World {
 		loadLevel(levNum);
 		// plop down a house on the last square
 
-		house = new FishHome(this, new IntPoint(5, 5));
+		house = new FishHome(this, logicalPath.get(logicalPath.size() - 1));
+		// house = new FishHome(this, new IntPoint(5, 5));
+		startHouse = new FishHome(this, logicalPath.get(0));
 
 	}
 
@@ -72,8 +75,9 @@ public class World {
 	private void loadMap() {
 		this.logicalPath = map.getLogicalPath();
 		for (int i = 0; i < 5; i++) {
-			Point2D p = generateRandomTowerCoord();
-			this.towers.put(convertP2DToIntPt(p), new Tower(p, this));
+			IntPoint p = generateRandomTowerCoord();
+			IntPoint p2 = new IntPoint((int) p.getX() * 60, (int) p.getY() * 60);
+			this.towers.put(p2, new Tower(p, this));
 		}
 	}
 
@@ -106,6 +110,7 @@ public class World {
 		for (Enemy e : this.walkingEnemies) {
 			e.update(secondsSinceLastUpdate);
 			for (IntPoint p : this.towers.keySet()) {
+				System.out.println("Tower: " + p + " Fish: " + e.getLocation());
 				if (Math.hypot(e.location.getX() - p.getX(), e.location.getY() - p.getY()) < this.towers.get(p).range) {
 					// System.out.println("FIRE!");
 					this.towers.get(p).fireProjectile(e, secondsSinceLastUpdate);
@@ -160,6 +165,7 @@ public class World {
 
 		// draw house at the end of the path
 		house.draw(g);
+		startHouse.draw(g);
 	}
 
 //HELPER METHODS***************
@@ -189,14 +195,17 @@ public class World {
 	/**
 	 * @return an IntPoint where it is valid to put a tower.
 	 */
-	public Point2D generateRandomTowerCoord() {
-		float x = (float) (Math.random() * TDGame.WIDTH);
-		float y = (float) (Math.random() * TDGame.HEIGHT);
-		Point2D p = new Point2D.Float(x, y);
-		// If it's not valid, try again.
-		if (!isValidTowerCoord(p)) {
-			return generateRandomTowerCoord();
-		}
+	public IntPoint generateRandomTowerCoord() {
+		int i = 0;
+		IntPoint p;
+		do {
+			int x = (int) (Math.random() * 600 / 60);
+			int y = (int) (Math.random() * 600 / 60);
+			p = new IntPoint(x, y);
+
+			i++;
+		} while (i < 10 && !isValidTowerCoord(p));
+
 		return p;
 	}
 
@@ -204,8 +213,13 @@ public class World {
 	 * @param p Location for a potential tower.
 	 * @return true if the point given is a valid place to put a tower.
 	 */
-	public boolean isValidTowerCoord(Point2D p) {
-		// TODO fill this out
+	public boolean isValidTowerCoord(IntPoint p) {
+		// if it's on the path, no.
+		for (IntPoint path : logicalPath) {
+			if (p.equals(path)) {
+				return false;
+			}
+		}
 		return true;
 	}
 

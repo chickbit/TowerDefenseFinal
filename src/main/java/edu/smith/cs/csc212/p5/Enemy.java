@@ -42,6 +42,9 @@ public class Enemy {
 	// Vars that talk about enemy size
 	int fishWidth = 80;
 	int fishHeight = 40;
+	// width of a tile in the world
+
+	int tileW = 60;
 
 	/**
 	 * Construct the enemy.
@@ -108,6 +111,7 @@ public class Enemy {
 
 		Graphics2D g2 = (Graphics2D) g.create();
 		// Move the graphics window so we draw on top of our center point
+
 		g2.translate(x - fishWidth / 2, y - fishHeight / 2);
 		g2.setColor(this.color);
 
