@@ -100,9 +100,17 @@ public class TDGame extends GFX {
 		int l = getTileH();
 		// Draw the path
 
-		for (IntPoint p : world.logicalPathP2D) {
-			g.setColor(world.getPathColor());
-			g.fillRect((int) p.getX() * w, (int) p.getY() * l, w, l);
+		/*
+		 * for (IntPoint p : world.logicalPathP2D) {
+		 * g.setColor(world.getPathColor());
+		 * g.fillRect((int) p.getX() * w, (int) p.getY() * l, w, l);
+		 * }
+		 */
+		// this works
+		for (Tile t : world.allTiles) {
+			if (t.isPath) {
+				t.draw(g, world.getPathColor());
+			}
 		}
 
 		// Draw the objects in the world

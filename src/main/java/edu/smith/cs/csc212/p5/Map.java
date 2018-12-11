@@ -18,6 +18,7 @@ import me.jjfoley.gfx.IntPoint;
 public class Map {
 	// This stores rocks and stuff in a specific configuration
 	// Has a path for enemies.
+	// TODO why are there two Point paths?
 	List<Point2D> path = new LinkedList<Point2D>();
 	List<IntPoint> logicalPathIntPt = new LinkedList<IntPoint>();
 	List<Tile> logicalPathTile = new LinkedList<Tile>();
@@ -41,8 +42,13 @@ public class Map {
 		int tw = w.getTileSize();
 		for (int i = 1; i < 5; i++) {
 			logicalPathIntPt.add(new IntPoint(i, 4));
-			logicalPathTile.add(new Tile(i, 3, tw, true));
+			logicalPathTile.add(new Tile(i, 4, tw, true));
 			path.add(new IntPoint(i * tw + 30, 4 * tw + 30));
+		}
+		for (int i = 4; i < 10; i++) {
+			logicalPathIntPt.add(new IntPoint(5, i));
+			logicalPathTile.add(new Tile(5, i, tw, true));
+			path.add(new IntPoint(5 * tw + 30, i * tw + 30));
 		}
 	}
 

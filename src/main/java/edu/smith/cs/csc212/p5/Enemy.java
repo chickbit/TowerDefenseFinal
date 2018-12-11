@@ -8,13 +8,19 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 
 public class Enemy {
+	/**
+	 * Enemy's current location
+	 */
 	Point2D location;
+	/**
+	 * Enemy's destination
+	 */
 	Point2D destination;
-	// TODO fill this out
-	List<Point2D> destPoints;
+	/**
+	 * The path the enemy is walking.
+	 */
 	List<Tile> destTileList;
 	/**
 	 * Initial health
@@ -39,90 +45,42 @@ public class Enemy {
 	/**
 	 * Size (doesn't do anything yet.)
 	 */
-	float size = 20;
+	float size = (float) 0.75;
 	// Vars that talk about enemy size
 	int fishWidth = 80;
 	int fishHeight = 40;
 	// width of a tile in the world
-
 	int tileW = 60;
-	boolean isTiled;
+	World w;
 
 	/**
-	 * Construct the enemy.
+	 * Construct an Enemy
 	 * 
-	 * @param startPt Initial position
-	 * @param speed   Speed in pixels per second.
+	 * @param path  A List of Tiles that the enemy walks on.
+	 * @param speed The speed of the enemy.
 	 */
-	public Enemy(Point2D startPt, float speed) {
-		this.initHealth = 100;
-		this.health = 100;
-		this.location = new Point2D.Double(startPt.getX(), startPt.getY());
-		this.speed = speed;
-		this.color = Color.orange;
-		this.destination = new Point2D.Float(600, 600);
-		this.healthDebit = 0;
-		this.destPoints = new LinkedList<Point2D>();
-		this.isTiled = false;
-		this.destTileList = new LinkedList<Tile>();
-	}
-
-	/**
-	 * Construct an enemy that uses the Point2D Path mechanic. Fish created with this constructor will be green.
-	 * 
-	 * @param path
-	 */
-	public Enemy(LinkedList<Point2D> path, float speed) {
-		this.isTiled = false;
-		if (path.size() < 2) {
-			throw new AssertionError("I need at least a start and an end point!");
-		}
-		this.destTileList = new LinkedList<Tile>();
-		this.initHealth = 100;
-		this.health = 100;
-		this.location = path.getFirst();
-		path.remove(0);
-		this.speed = speed;
-		this.color = Color.green;
-		this.destination = path.getFirst();
-		this.healthDebit = 0;
-		this.destPoints = (LinkedList<Point2D>) path;
-	}
-
 	public Enemy(List<Tile> path, float speed) {
-		this.isTiled = true;
-		this.destTileList = new LinkedList<Tile>();
-		if (path.size() < 2) {
-			throw new AssertionError("I need at least a start and an end point!");
-		}
-		this.initHealth = 100;
-		this.destPoints = new LinkedList<Point2D>();
-
-		this.health = 100;
-		this.location = ((LinkedList<Tile>) path).getFirst().getFloatPixelCenter();
-		path.remove(0);
+		// set speed, color, health
 		this.speed = speed;
 		this.color = Color.PINK;
-		this.destination = ((LinkedList<Tile>) path).getFirst().getFloatPixelCenter();
-		this.healthDebit = 0;
-		this.destTileList = (LinkedList<Tile>) path;
-	}
-
-	/**
-	 * Construct the enemy, but don't give it a location yet.
-	 * 
-	 * @param speed Speed in pixels per second.
-	 */
-	public Enemy(float speed) {
 		this.initHealth = 100;
-		this.health = this.initHealth;
-		this.speed = speed;
-		// Our enemy is a circle for now!
-		// this.shape = new Ellipse2D.Float((float) this.location.getX(), (float)
-		// this.location.getY(), this.size,
-		// this.size);
-		this.color = Color.orange;
 		this.healthDebit = 0;
+		this.health = 100;
+
+		// this fish works with tiles
+		this.destTileList = (LinkedList<Tile>) path;
+
+		// yell if the programmer gives us a crummy path
+		if (path.size() < 2) {
+			throw new AssertionError("I need at least a start and an end point!");
+		}
+
+		// set location to the first point on the path
+		this.location = ((LinkedList<Tile>) path).getFirst().getFloatPixelCenter();
+		// pop our current location off of the path
+		path.remove(0);
+		// the new first point is our destination
+		this.destination = ((LinkedList<Tile>) path).getFirst().getFloatPixelCenter();
 	}
 
 	/**
@@ -137,7 +95,9 @@ public class Enemy {
 		Graphics2D g2 = (Graphics2D) g.create();
 		// Move the graphics window so we draw on top of our center point
 
-		g2.translate(x - fishWidth / 2, y - fishHeight / 2);
+		g2.translate(x - (fishWidth / 2) * size, y - (fishHeight / 2) * size);
+
+		g2.scale(size, size);
 		g2.setColor(this.color);
 
 		Shape body = new Ellipse2D.Double(0, 0, 80, 40);
@@ -166,7 +126,8 @@ public class Enemy {
 		// fade away when the enemy isn't being hit.
 
 		Graphics2D g3 = (Graphics2D) g.create();
-		g3.translate(x - fishWidth / 2, y - fishHeight / 2);
+		g3.translate(x - (fishWidth / 2) * size, y - (fishHeight / 2) * size);
+		g3.scale(size, size);
 		// draw the health bar
 		float hungerWidth = (this.initHealth - this.health) / this.initHealth * 60;
 		if (hungerWidth <= 0) {
@@ -192,6 +153,9 @@ public class Enemy {
 		this.health -= this.healthDebit;
 		// Reset health debit counter
 		this.healthDebit = 0;
+		if (this.health <= 0) {
+
+		}
 		// TODO If health <= 0, remove the enemy from the World.
 
 		// If we don't have a destination, set it to the current location.
@@ -204,12 +168,7 @@ public class Enemy {
 		else if (!this.destination.equals(null) && !this.location.equals(null)) {
 			// if we are at our destination, get the next destination
 			if (this.destination.distance(this.location) < 3) {
-				if (destPoints.size() > 1 && !isTiled) {
-					// pop off the current point
-					destPoints.remove(0);
-					// get the next one
-					this.destination = (Point2D) destPoints.get(0);
-				} else if (destTileList.size() > 1 && isTiled) {
+				if (destTileList.size() > 1) {
 					// pop off current tile
 					destTileList.remove(0);
 					// get the next one
@@ -261,6 +220,29 @@ public class Enemy {
 	public void takeDamage(float damage) {
 		// Our health-debit bank is updated by the amount of damage
 		this.healthDebit += damage;
+	}
+
+	/**
+	 * @return True if this fish is alive, false if it's dead.
+	 */
+	public boolean isDead() {
+		if (this.health <= 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public boolean isAtEnd() {
+		// get the end tile
+		Tile endTile = this.destTileList.get(destTileList.size() - 1);
+
+		// if our position is within 1 px of the endTile's center, we're at the end.
+		if (this.location.distance(endTile.getFloatPixelCenter()) < 1) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 }

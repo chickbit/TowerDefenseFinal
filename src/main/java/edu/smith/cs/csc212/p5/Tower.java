@@ -81,7 +81,6 @@ public class Tower extends TiledWorldObject {
 			sumTime = 0;
 			Projectile p = new Projectile(super.world, e, false, this.pos);
 			super.world.addProjectile(p);
-			System.out.println("projectile");
 		}
 	}
 

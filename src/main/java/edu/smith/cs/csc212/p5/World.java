@@ -14,39 +14,87 @@ import java.util.TreeMap;
 import me.jjfoley.gfx.IntPoint;
 
 /**
+ * The World will ask Map for stuff.
+ * TDGame will never ask Map for stuff.
+ * This has the stuff, stores the stuff, adds and removes the stuff.
  * 
- * @author barba
- *
+ * @author Barb Garrison
  */
 public class World {
-
-	// The World will ask Map for stuff.
-	// GameGraphics will never ask Map for stuff. World controls everything.
-
-	// This has the stuff, stores the stuff, adds and removes the stuff.
+	// TODO is there a nice way to make these come from TDGame
+	/** The pixel-height of the board */
+	static final int HEIGHT = 600;
+	/** The pixel-width of the board */
+	static final int WIDTH = 600;
+	/** The number of tiles on each side of the board */
+	static final int LOG_GRID_SIZE = 10;
+	/**
+	 * The map we're using.
+	 */
 	Map map;
+	/**
+	 * The path for Enemies to follow, in IntPoints.
+	 */
 	List<IntPoint> logicalPathP2D;
+	/**
+	 * The path for Enemies to follow, in Tiles.
+	 */
 	List<Tile> logicalPathTile;
-
 	/**
 	 * The level number.
 	 */
 	int levNum = 1;
+	/**
+	 * The set of enemies we're throwing at the player during this round.
+	 */
 	Level level;
+	/**
+	 * The list of Tiles that make up our playing surface.
+	 */
 	List<Tile> allTiles;
+	/**
+	 * Enemies that haven't been released yet.
+	 */
 	List<Enemy> waitingEnemies;
+	/**
+	 * Enemies that are currently walking the path.
+	 */
 	List<Enemy> walkingEnemies;
+	/**
+	 * Enemies that the player has killed.
+	 */
 	List<Enemy> deadEnemies;
+	/**
+	 * Projectiles currently flying.
+	 */
 	List<Projectile> projectiles;
+	/**
+	 * Projectiles that have stopped. This gets cleared every round.
+	 */
 	List<Projectile> deadProjectiles;
+	// TODO make this TiledWorldObject
+	/**
+	 * A Map of IntPoint:Tower that stores our towers.
+	 */
 	HashMap<IntPoint, Tower> towers;
-
-	static final int HEIGHT = 600;
-	static final int WIDTH = 600;
-	static final int LOG_GRID_SIZE = 10;
+	// TODO this should really be a tower property
+	/**
+	 * The interval, in seconds, between shots from a tower.
+	 */
 	double coolDown = 3;
+	/**
+	 * How long has it been since the tower last fired?
+	 */
 	double sumTime = 0;
+	// TODO are the houses loaded as part of a Map?
+	// TODO these should be part of the List of TiledWorldObject
+	/**
+	 * The building at the end of the map.
+	 */
 	FishHome house;
+	/**
+	 * The building at the start of the map.
+	 */
 	FishHome startHouse;
 
 	/**
@@ -69,7 +117,7 @@ public class World {
 
 		// giving this to the level is cranky
 		LinkedList<Point2D> temp = new LinkedList<Point2D>();
-		for (IntPoint p : map.getLogicalPathP2D()) {
+		for (Point2D p : map.getLogicalPathP2D()) {
 			temp.add(p);
 		}
 		this.level = new Level(map.getstart(), temp, (LinkedList<Tile>) map.getLogicalPathTile());
@@ -79,7 +127,6 @@ public class World {
 		house = new FishHome(this, logicalPathP2D.get(logicalPathP2D.size() - 1));
 		// house = new FishHome(this, new IntPoint(5, 5));
 		startHouse = new FishHome(this, logicalPathP2D.get(0));
-
 	}
 
 	/**
@@ -104,7 +151,7 @@ public class World {
 		// make a tower:
 		// make a list of one tile
 		List<Tile> tList = new ArrayList<Tile>();
-		tList.add(allTiles.get(40));
+		tList.add(allTiles.get(45));
 		// pass it to the new tower
 		Tower t = new Tower(tList, this);
 		// put the tower in the world
@@ -139,16 +186,23 @@ public class World {
 
 		for (Enemy e : this.walkingEnemies) {
 			e.update(secondsSinceLastUpdate);
-			for (IntPoint p : this.towers.keySet()) {
-				System.out.println("Tower: " + p + " Fish: " + e.getLocation());
-				if (Math.hypot(e.location.getX() - p.getX(), e.location.getY() - p.getY()) < this.towers.get(p).range) {
-					// System.out.println("FIRE!");
-					this.towers.get(p).fireProjectile(e, secondsSinceLastUpdate);
+			if (e.isDead()) {
+				removeEnemy(e);
+			} else if (e.isAtEnd()) {
+				recycleEnemy(e);
+			} else {
+				for (IntPoint p : this.towers.keySet()) {
+					// System.out.println("Tower: " + p + " Fish: " + e.getLocation());
+					if (Math.hypot(e.location.getX() - p.getX(),
+							e.location.getY() - p.getY()) < this.towers.get(p).range) {
+						// System.out.println("FIRE!");
+						this.towers.get(p).fireProjectile(e, secondsSinceLastUpdate);
+					}
 				}
 			}
 		}
 
-		// TODO how do I update towers if they're not iterable??
+		// How do I update towers if they're not iterable??
 		// https://stackoverflow.com/questions/1066589/iterate-through-a-hashmap
 		for (Tower t : this.towers.values()) {
 			t.update(secondsSinceLastUpdate);
@@ -311,6 +365,33 @@ public class World {
 	 */
 	public void removeTiledWorldObject(TiledWorldObject two) {
 
+	}
+
+	/**
+	 * Put an Enemy that makes it to the end of the path back into the game.
+	 * 
+	 * @param e the Enemy that makes it to the end of the path
+	 */
+	public void recycleEnemy(Enemy e) {
+		// check that the enemy in question is actually walking
+		if (!walkingEnemies.contains(e)) {
+			throw new AssertionError("The given enemy isn't walking!");
+		}
+		walkingEnemies.remove(e);
+		waitingEnemies.add(e);
+	}
+
+	/**
+	 * Remove a walking Enemy (used when Enemies die)
+	 * 
+	 * @param e the Enemy to be removed.
+	 */
+	public void removeEnemy(Enemy e) {
+		// check that the enemy in question is actually walking
+		if (!walkingEnemies.contains(e)) {
+			throw new AssertionError("The given enemy isn't walking!");
+		}
+		walkingEnemies.remove(e);
 	}
 
 }

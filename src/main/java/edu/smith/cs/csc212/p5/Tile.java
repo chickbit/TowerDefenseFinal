@@ -1,5 +1,7 @@
 package edu.smith.cs.csc212.p5;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 
 import me.jjfoley.gfx.IntPoint;
@@ -58,6 +60,10 @@ public class Tile {
 		// Calculate the pixel-location of the tile
 		this.pixelX = lx * el;
 		this.pixelY = ly * el;
+
+		// System.out.println(
+		// "getIntPixelCenter: " + getIntPixelCenter() + " | getFloatPixelCenter: " + getFloatPixelCenter());
+		// System.out.println("Log: (" + lx + ", " + ly + ") | Pix: (" + pixelX + ", " + pixelY + ")");
 	}
 
 	/**
@@ -92,6 +98,16 @@ public class Tile {
 		int newY = y / edgeLength;
 		IntPoint tileCoordinate = new IntPoint(newX, newY);
 		return tileCoordinate;
+	}
+
+	/**
+	 * Draws itself on the World.
+	 * 
+	 * @param g
+	 */
+	public void draw(Graphics2D g, Color color) {
+		g.setColor(color);
+		g.fillRect(pixelX, pixelY, edgeLength, edgeLength);
 	}
 
 	/**
