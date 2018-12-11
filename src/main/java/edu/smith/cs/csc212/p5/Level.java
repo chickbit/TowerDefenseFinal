@@ -11,14 +11,16 @@ public class Level {
 	/**
 	 * Construct a Level
 	 */
-	public Level(Point2D p, LinkedList<Point2D> path) {
+	public Level(Point2D p, LinkedList<Point2D> P2DPath, LinkedList<Tile> tilePath) {
 		// TODO populate the level with better Enemies
-		Enemy pathTester = new Enemy(path, 15);
-		Enemies.add(pathTester);
-		for (int i = 0; i < 2; i++) {
-			Enemy e = new Enemy(new Point2D.Double(p.getX(), p.getY()), 15);
-			Enemies.add(e);
-		}
+		// Enemy pathTester = new Enemy(P2DPath, 15);
+		// Enemies.add(pathTester);
+		Enemy tilePathTester = new Enemy(tilePath, 20);
+		Enemies.add(tilePathTester);
+		// for (int i = 0; i < 2; i++) {
+		// Enemy e = new Enemy(new Point2D.Double(p.getX(), p.getY()), 15);
+		// Enemies.add(e);
+		// }
 	}
 
 	/**

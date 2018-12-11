@@ -1,6 +1,7 @@
 package edu.smith.cs.csc212.p5;
 
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 import java.util.List;
 
 import me.jjfoley.gfx.IntPoint;
@@ -14,7 +15,7 @@ import me.jjfoley.gfx.IntPoint;
  * @author Barb Garrison
  *
  */
-public abstract class TiledWorldObject {
+public abstract class TiledWorldObject implements Comparable<TiledWorldObject> {
 	/**
 	 * A List of Tiles that this object occupies
 	 */
@@ -27,6 +28,7 @@ public abstract class TiledWorldObject {
 	// constructor tells those Tiles that they've been built on
 	public TiledWorldObject(List<Tile> givenTList, World w) {
 		this.world = w;
+		this.tileList = new ArrayList<Tile>();
 		// loop over all given tiles
 		for (Tile t : givenTList) {
 			// add each tile to our own tileList
@@ -74,5 +76,23 @@ public abstract class TiledWorldObject {
 	 * @param secondsSinceLastUpdate how many nanoseconds it's been since the object was last updated.
 	 */
 	public abstract void update(double secondsSinceLastUpdate);
+
+	@Override
+	public int compareTo(TiledWorldObject t) {
+		// If we are the same tower, we are in the same location.
+		if (this.equals(t)) {
+			return 0;
+		}
+		// If we are left of t, we are greater.
+		if (this.getCenter().getX() < t.getCenter().getX()) {
+			return 1;
+		} else if (this.getCenter().getX() == t.getCenter().getX()) {
+			// If they are at the same x, the one that appears highest to the user wins.
+			if (this.getCenter().getY() < t.getCenter().getY()) {
+				return 1;
+			}
+		}
+		return -1;
+	}
 
 }

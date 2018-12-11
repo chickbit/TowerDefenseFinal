@@ -25,20 +25,25 @@ public class World {
 
 	// This has the stuff, stores the stuff, adds and removes the stuff.
 	Map map;
-	List<IntPoint> logicalPath;
+	List<IntPoint> logicalPathP2D;
+	List<Tile> logicalPathTile;
+
 	/**
 	 * The level number.
 	 */
 	int levNum = 1;
 	Level level;
+	List<Tile> allTiles;
 	List<Enemy> waitingEnemies;
 	List<Enemy> walkingEnemies;
 	List<Enemy> deadEnemies;
 	List<Projectile> projectiles;
 	List<Projectile> deadProjectiles;
 	HashMap<IntPoint, Tower> towers;
-	int height = 500;
-	int width = 500;
+
+	static final int HEIGHT = 600;
+	static final int WIDTH = 600;
+	static final int LOG_GRID_SIZE = 10;
 	double coolDown = 3;
 	double sumTime = 0;
 	FishHome house;
@@ -58,14 +63,22 @@ public class World {
 		this.waitingEnemies = new ArrayList<Enemy>();
 		this.projectiles = new ArrayList<Projectile>();
 		this.deadProjectiles = new ArrayList<Projectile>();
+		this.allTiles = new ArrayList<Tile>();
+		this.logicalPathTile = new LinkedList<Tile>();
 		loadMap();
-		this.level = new Level(map.getstart(), (LinkedList<Point2D>) map.getPath());
+
+		// giving this to the level is cranky
+		LinkedList<Point2D> temp = new LinkedList<Point2D>();
+		for (IntPoint p : map.getLogicalPathP2D()) {
+			temp.add(p);
+		}
+		this.level = new Level(map.getstart(), temp, (LinkedList<Tile>) map.getLogicalPathTile());
+
 		loadLevel(levNum);
 		// plop down a house on the last square
-
-		house = new FishHome(this, logicalPath.get(logicalPath.size() - 1));
+		house = new FishHome(this, logicalPathP2D.get(logicalPathP2D.size() - 1));
 		// house = new FishHome(this, new IntPoint(5, 5));
-		startHouse = new FishHome(this, logicalPath.get(0));
+		startHouse = new FishHome(this, logicalPathP2D.get(0));
 
 	}
 
@@ -73,12 +86,29 @@ public class World {
 	 * Inserts a whole bunch of random towers and saves the LogicalPath to World
 	 */
 	private void loadMap() {
-		this.logicalPath = map.getLogicalPath();
-		for (int i = 0; i < 5; i++) {
-			IntPoint p = generateRandomTowerCoord();
-			IntPoint p2 = new IntPoint((int) p.getX() * 60, (int) p.getY() * 60);
-			this.towers.put(p2, new Tower(p, this));
+		this.logicalPathP2D = map.getLogicalPathP2D();
+		this.logicalPathTile = map.getLogicalPathTile();
+		// fill the map with tiles
+		for (int i = 0; i < LOG_GRID_SIZE; i++) {
+			for (int j = 0; j < LOG_GRID_SIZE; j++) {
+				// check if this tile is path
+				boolean isPath = false;
+				for (IntPoint k : logicalPathP2D) {
+					if (k.equals(new IntPoint(i, j))) {
+						isPath = true;
+					}
+				}
+				allTiles.add(new Tile(i, j, getTileSize(), isPath));
+			}
 		}
+		// make a tower:
+		// make a list of one tile
+		List<Tile> tList = new ArrayList<Tile>();
+		tList.add(allTiles.get(40));
+		// pass it to the new tower
+		Tower t = new Tower(tList, this);
+		// put the tower in the world
+		towers.put(t.getCenter(), t);
 	}
 
 	/**
@@ -215,7 +245,7 @@ public class World {
 	 */
 	public boolean isValidTowerCoord(IntPoint p) {
 		// if it's on the path, no.
-		for (IntPoint path : logicalPath) {
+		for (IntPoint path : logicalPathP2D) {
 			if (p.equals(path)) {
 				return false;
 			}
@@ -248,20 +278,20 @@ public class World {
 	 * @return the Width of the World
 	 */
 	public int getWidth() {
-		return this.width;
+		return WIDTH;
 	}
 
 	/**
 	 * @return the height of the World
 	 */
 	public int getHeight() {
-		return this.height;
+		return HEIGHT;
 	}
 
 	/**
 	 * @return the length of a side of a square tile
 	 */
-	public int getTileSize() {
+	public static int getTileSize() {
 		return 60;
 	}
 
@@ -272,6 +302,15 @@ public class World {
 	 */
 	public void removeProjectile(Projectile p) {
 		deadProjectiles.add(p);
+	}
+
+	/**
+	 * Remove a TiledWorldObject from the world
+	 * 
+	 * @param two the TiledWorldObject in question.
+	 */
+	public void removeTiledWorldObject(TiledWorldObject two) {
+
 	}
 
 }

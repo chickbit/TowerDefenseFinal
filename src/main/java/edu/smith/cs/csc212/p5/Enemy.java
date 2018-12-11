@@ -15,6 +15,7 @@ public class Enemy {
 	Point2D destination;
 	// TODO fill this out
 	List<Point2D> destPoints;
+	List<Tile> destTileList;
 	/**
 	 * Initial health
 	 */
@@ -45,6 +46,7 @@ public class Enemy {
 	// width of a tile in the world
 
 	int tileW = 60;
+	boolean isTiled;
 
 	/**
 	 * Construct the enemy.
@@ -61,6 +63,8 @@ public class Enemy {
 		this.destination = new Point2D.Float(600, 600);
 		this.healthDebit = 0;
 		this.destPoints = new LinkedList<Point2D>();
+		this.isTiled = false;
+		this.destTileList = new LinkedList<Tile>();
 	}
 
 	/**
@@ -69,9 +73,11 @@ public class Enemy {
 	 * @param path
 	 */
 	public Enemy(LinkedList<Point2D> path, float speed) {
+		this.isTiled = false;
 		if (path.size() < 2) {
 			throw new AssertionError("I need at least a start and an end point!");
 		}
+		this.destTileList = new LinkedList<Tile>();
 		this.initHealth = 100;
 		this.health = 100;
 		this.location = path.getFirst();
@@ -81,6 +87,25 @@ public class Enemy {
 		this.destination = path.getFirst();
 		this.healthDebit = 0;
 		this.destPoints = (LinkedList<Point2D>) path;
+	}
+
+	public Enemy(List<Tile> path, float speed) {
+		this.isTiled = true;
+		this.destTileList = new LinkedList<Tile>();
+		if (path.size() < 2) {
+			throw new AssertionError("I need at least a start and an end point!");
+		}
+		this.initHealth = 100;
+		this.destPoints = new LinkedList<Point2D>();
+
+		this.health = 100;
+		this.location = ((LinkedList<Tile>) path).getFirst().getFloatPixelCenter();
+		path.remove(0);
+		this.speed = speed;
+		this.color = Color.PINK;
+		this.destination = ((LinkedList<Tile>) path).getFirst().getFloatPixelCenter();
+		this.healthDebit = 0;
+		this.destTileList = (LinkedList<Tile>) path;
 	}
 
 	/**
@@ -178,12 +203,20 @@ public class Enemy {
 		// If we have a destination and a location, move towards the destination.
 		else if (!this.destination.equals(null) && !this.location.equals(null)) {
 			// if we are at our destination, get the next destination
-			if (this.destination.distance(this.location) < 3 && destPoints.size() > 1) {
-				// pop off the current point
-				destPoints.remove(0);
-				// get the next one
-				this.destination = (Point2D) destPoints.get(0);
+			if (this.destination.distance(this.location) < 3) {
+				if (destPoints.size() > 1 && !isTiled) {
+					// pop off the current point
+					destPoints.remove(0);
+					// get the next one
+					this.destination = (Point2D) destPoints.get(0);
+				} else if (destTileList.size() > 1 && isTiled) {
+					// pop off current tile
+					destTileList.remove(0);
+					// get the next one
+					this.destination = destTileList.get(0).getFloatPixelCenter();
+				}
 			}
+
 			// setHypot is change in location/seconds * seconds elapsed
 			// calculate diff in x and y and hypot
 			double dx = this.destination.getX() - this.location.getX();

@@ -19,7 +19,8 @@ public class Map {
 	// This stores rocks and stuff in a specific configuration
 	// Has a path for enemies.
 	List<Point2D> path = new LinkedList<Point2D>();
-	List<IntPoint> logicalPath = new LinkedList<IntPoint>();
+	List<IntPoint> logicalPathIntPt = new LinkedList<IntPoint>();
+	List<Tile> logicalPathTile = new LinkedList<Tile>();
 	Color defaultColor = new Color(100, 219, 255);
 	Color pathColor = new Color(113, 147, 255);
 	Point2D start = new Point2D.Float(300, 300);
@@ -39,7 +40,8 @@ public class Map {
 		this.w = w;
 		int tw = w.getTileSize();
 		for (int i = 1; i < 5; i++) {
-			logicalPath.add(new IntPoint(i, 4));
+			logicalPathIntPt.add(new IntPoint(i, 4));
+			logicalPathTile.add(new Tile(i, 3, tw, true));
 			path.add(new IntPoint(i * tw + 30, 4 * tw + 30));
 		}
 	}
@@ -51,8 +53,12 @@ public class Map {
 		return this.path;
 	}
 
-	public List<IntPoint> getLogicalPath() {
-		return this.logicalPath;
+	public List<IntPoint> getLogicalPathP2D() {
+		return this.logicalPathIntPt;
+	}
+
+	public List<Tile> getLogicalPathTile() {
+		return this.logicalPathTile;
 	}
 
 	/**
