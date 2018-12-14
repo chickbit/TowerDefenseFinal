@@ -1,6 +1,7 @@
 package edu.smith.cs.csc212.p5;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -9,7 +10,7 @@ import java.util.Date;
 import me.jjfoley.gfx.GFX;
 
 public class PlayToGif {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		GFX app = new TDGame();
 		int numSeconds = 10;
 		// make new files each time this is run - I don't want to overwrite old gifs

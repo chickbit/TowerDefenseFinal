@@ -5,7 +5,6 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
-import java.awt.geom.Point2D.Float;
 
 public class Projectile {
 	/**
@@ -20,6 +19,10 @@ public class Projectile {
 	 * Whether or not the Projectile is a homing projectile.
 	 */
 	boolean isTracker;
+	/**
+	 * Location of the tower
+	 */
+	Point2D towerLocation;
 	/**
 	 * Projectile's current location
 	 */
@@ -37,6 +40,9 @@ public class Projectile {
 	 */
 	public final float speed = 250;
 
+	private float timeAlive = 0;
+	final double towerRange = 5.0;
+
 	/**
 	 * Constructor
 	 * 
@@ -48,10 +54,11 @@ public class Projectile {
 	public Projectile(World world, Enemy target, boolean homing, Point2D loc) {
 		this.w = world;
 		this.e = target;
+		this.towerLocation = new Point2D.Double(loc.getX(), loc.getY());
+		this.isTracker = homing;
 		this.setDestination();
 
-		this.isTracker = homing;
-		this.location = new Point2D.Float((float) loc.getX(), (float) loc.getY());
+		this.location = new Point2D.Double(loc.getX(), loc.getY());
 		// Adds itself to the World's list of projectiles.
 		w.addProjectile(this);
 	}
@@ -60,13 +67,45 @@ public class Projectile {
 	 * Sets the destination of the projectile.
 	 */
 	private void setDestination() {
-		this.dest = e.getLocation();
+		System.out.println("setDestination called.");
+		// if we're a tracker, our destination is the fish
+		if (isTracker) {
+			System.out.println("This is a tracker! No further work required.");
+			this.dest = e.getLocation();
+		}
+
+		// if we're not a tracker, we're gonna fire towards the fish but our actual "destination" is the outside edge of the circle
+		else {
+			// get point of fish
+			System.out.println("Tower location: " + towerLocation);
+			Point2D ePt = e.getLocation();
+			System.out.println("Fish location: " + ePt);
+			// (tower) - (fish)
+			Point2D vector = new Point2D.Double(ePt.getX() - this.towerLocation.getX(),
+					ePt.getY() - this.towerLocation.getY());
+			System.out.println("Fish - tower: " + vector);
+			// get magnitude
+			double magnitude = vector.distance(0, 0);
+			System.out.println("Magnitude: " + magnitude);
+			// now we have a unit vector
+			vector.setLocation(vector.getX() / magnitude, vector.getY() / magnitude);
+			System.out.println("Now it's a unit vector: " + vector);
+			// multiply by tower range
+			vector.setLocation(vector.getX() * this.towerRange, vector.getY() * this.towerRange);
+			System.out.println("And now it's the right size: " + vector);
+			// add to tower
+			vector.setLocation(this.towerLocation.getX() + vector.getX(), this.towerLocation.getY() + vector.getY());
+			System.out.println("And now it's centered on the tower again: " + vector);
+			// return it
+			this.dest = vector;
+		}
 	}
 
 	/**
 	 * Update state of the Projectile based on time since last update.
 	 */
 	public void update(double t) {
+		this.timeAlive += t;
 		if (w == null) {
 			return;
 		}
@@ -75,12 +114,15 @@ public class Projectile {
 			setDestination();
 		}
 		// if we hit our target, do damage and then remove ourselves
-		if (this.location.distance(this.dest) < 2) {
-			e.takeDamage(10);
+		if (this.location.distance(this.dest) < 5) {
+			if (this.location.distance(e.getLocation()) < 5) {
+				e.takeDamage(50);
+			}
 			this.w.removeProjectile(this);
 			this.w = null;
 			return;
 		}
+
 		// If we don't have a destination, set it to the current location.
 		// setHypot is change in location/seconds * seconds elapsed
 		// calculate diff in x and y and hypot
@@ -94,7 +136,10 @@ public class Projectile {
 		double newY = this.location.getY() + (dy / hypot) * speed * t;
 		// System.out.println("newx = " + newX + "| newy = " + newY);
 		// Set our location to our new location
-
+		if (this.timeAlive > 5) {
+			// System.out.println("I'm a long-lasting bullet. Here's my location: " + this.location
+			// + ", and here's my destination" + this.dest);
+		}
 		this.location = new Point2D.Float((float) newX, (float) newY);
 	}
 

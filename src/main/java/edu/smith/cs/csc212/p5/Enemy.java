@@ -43,6 +43,10 @@ public class Enemy {
 	 */
 	Color color;
 	/**
+	 * How many dollars this enemy is worth, once killed.
+	 */
+	int value;
+	/**
 	 * Size (doesn't do anything yet.)
 	 */
 	float size = (float) 0.75;
@@ -52,6 +56,7 @@ public class Enemy {
 	// width of a tile in the world
 	int tileW = 60;
 	World w;
+	Shape body;
 
 	/**
 	 * Construct an Enemy
@@ -60,15 +65,17 @@ public class Enemy {
 	 * @param speed The speed of the enemy.
 	 */
 	public Enemy(List<Tile> path, float speed) {
-		// set speed, color, health
+		// set speed, color, health, value
 		this.speed = speed;
 		this.color = Color.PINK;
 		this.initHealth = 100;
 		this.healthDebit = 0;
 		this.health = 100;
+		this.value = 10;
+		this.body = new Ellipse2D.Double(0, 0, 80, 40);
 
 		// this fish works with tiles
-		this.destTileList = (LinkedList<Tile>) path;
+		this.destTileList = new LinkedList<Tile>(path);
 
 		// yell if the programmer gives us a crummy path
 		if (path.size() < 2) {
@@ -76,11 +83,11 @@ public class Enemy {
 		}
 
 		// set location to the first point on the path
-		this.location = ((LinkedList<Tile>) path).getFirst().getFloatPixelCenter();
+		this.location = ((LinkedList<Tile>) this.destTileList).getFirst().getFloatPixelCenter();
 		// pop our current location off of the path
-		path.remove(0);
+		this.destTileList.remove(0);
 		// the new first point is our destination
-		this.destination = ((LinkedList<Tile>) path).getFirst().getFloatPixelCenter();
+		this.destination = ((LinkedList<Tile>) this.destTileList).getFirst().getFloatPixelCenter();
 	}
 
 	/**
@@ -100,15 +107,14 @@ public class Enemy {
 		g2.scale(size, size);
 		g2.setColor(this.color);
 
-		Shape body = new Ellipse2D.Double(0, 0, 80, 40);
 		Shape tail = new Ellipse2D.Double(70, -10, 20, 60);
 		Shape eye = new Ellipse2D.Double(25, 10, 10, 10);
 
-		g2.fill(body);
+		g2.fill(this.body);
 
 		// draw body outline.
 		g2.setColor(Color.black);
-		g2.draw(body);
+		g2.draw(this.body);
 
 		// draw eye (still black):
 		g2.fill(eye);
@@ -168,11 +174,11 @@ public class Enemy {
 		else if (!this.destination.equals(null) && !this.location.equals(null)) {
 			// if we are at our destination, get the next destination
 			if (this.destination.distance(this.location) < 3) {
-				if (destTileList.size() > 1) {
+				if (this.destTileList.size() > 1) {
 					// pop off current tile
-					destTileList.remove(0);
+					this.destTileList.remove(0);
 					// get the next one
-					this.destination = destTileList.get(0).getFloatPixelCenter();
+					this.destination = this.destTileList.get(0).getFloatPixelCenter();
 				}
 			}
 
@@ -234,15 +240,54 @@ public class Enemy {
 	}
 
 	public boolean isAtEnd() {
+
 		// get the end tile
-		Tile endTile = this.destTileList.get(destTileList.size() - 1);
+		Tile endTile = this.destTileList.get(this.destTileList.size() - 1);
 
 		// if our position is within 1 px of the endTile's center, we're at the end.
 		if (this.location.distance(endTile.getFloatPixelCenter()) < 1) {
+			// System.out.println("isAtEnd called. Location: " + this.location + " | End: " + endTile.getIntPixelCenter()
+			// + " -- TRUE");
 			return true;
 		} else {
+			// System.out.println("isAtEnd called. Location: " + this.location + " | End: " + endTile.getIntPixelCenter()
+			// + " -- FALSE");
 			return false;
 		}
+	}
+
+	/**
+	 * @return how many dollars the enemy is worth.
+	 */
+	public int getValue() {
+		return this.value;
+	}
+
+	/**
+	 * Put the enemy back at the beginning of the path.
+	 */
+	public void reset(LinkedList<Tile> path) {
+		// reset the path
+		// System.out.println(this.destTileList);
+		// System.out.println(path);
+		this.destTileList.clear();
+		for (Tile t : path) {
+			this.destTileList.add(t);
+		}
+		// System.out.println(path);
+		// System.out.println(this.destTileList);
+
+		// yell if the programmer gives us a crummy path
+		if (destTileList.size() < 2) {
+			throw new AssertionError("Something is wrong with the reset() method - it gave a short path.");
+		}
+
+		// set location to the first point on the path
+		this.location = ((LinkedList<Tile>) this.destTileList).getFirst().getFloatPixelCenter();
+		// pop our current location off of the path
+		this.destTileList.remove(0);
+		// the new first point is our destination
+		this.destination = (((LinkedList<Tile>) this.destTileList).getFirst().getFloatPixelCenter());
 	}
 
 }

@@ -2,14 +2,11 @@ package edu.smith.cs.csc212.p5;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.TreeMap;
 
 import me.jjfoley.gfx.IntPoint;
 
@@ -61,9 +58,9 @@ public class World {
 	 */
 	List<Enemy> walkingEnemies;
 	/**
-	 * Enemies that the player has killed.
+	 * Enemies that have gone around the block more than once.
 	 */
-	List<Enemy> deadEnemies;
+	List<Enemy> veterans;
 	/**
 	 * Projectiles currently flying.
 	 */
@@ -78,6 +75,14 @@ public class World {
 	 */
 	HashMap<IntPoint, Tower> towers;
 	// TODO this should really be a tower property
+	/**
+	 * The player's money
+	 */
+	public int playerMoney;
+	/**
+	 * The player's lives
+	 */
+	public int playerLives;
 	/**
 	 * The interval, in seconds, between shots from a tower.
 	 */
@@ -105,10 +110,12 @@ public class World {
 		this.map = new Map(this);
 		// this.fish = new Enemy(new Point2D.Float(0, 0), 10);
 		// this.tower = new Tower(new Point2D.Float(500, 500), this);
+		this.playerLives = 100;
+		this.playerMoney = 0;
 		this.towers = new HashMap<IntPoint, Tower>();
 		this.walkingEnemies = new ArrayList<Enemy>();
-		this.deadEnemies = new ArrayList<Enemy>();
 		this.waitingEnemies = new ArrayList<Enemy>();
+		this.veterans = new ArrayList<Enemy>();
 		this.projectiles = new ArrayList<Projectile>();
 		this.deadProjectiles = new ArrayList<Projectile>();
 		this.allTiles = new ArrayList<Tile>();
@@ -175,22 +182,41 @@ public class World {
 	 * @param secondsSinceLastUpdate
 	 */
 	public void update(double secondsSinceLastUpdate) {
-		// TODO update
-		// What order do we update in???
+		// Make some lists to temporarily store enemies that die/survive til the end
+		List<Enemy> dead = new LinkedList<Enemy>();
+		List<Enemy> recycled = new LinkedList<Enemy>();
+
 		// release an enemy every 3 seconds
 		this.sumTime += secondsSinceLastUpdate;
+
 		if (this.sumTime > this.coolDown && !waitingEnemies.isEmpty()) {
+			// System.out.println("Time to add an enemy!");
 			sumTime = 0;
 			walkingEnemies.add(waitingEnemies.remove(0));
 		}
 
+		// Don't delay in adding recirculating enemies - they go immediately.
+		for (Enemy e : veterans) {
+			walkingEnemies.add(e);
+		}
+		veterans.clear();
+
+		// update every enemy
 		for (Enemy e : this.walkingEnemies) {
+			// tell the enemy to update itself
 			e.update(secondsSinceLastUpdate);
+			// if it's dead, queue it for removal
 			if (e.isDead()) {
-				removeEnemy(e);
-			} else if (e.isAtEnd()) {
-				recycleEnemy(e);
-			} else {
+				removeEnemy(e, dead);
+			}
+			// if it's survived to the end and will go back to the beginning,
+			// queue it for return to the beginning
+			else if (e.isAtEnd()) {
+				recycleEnemy(e, recycled);
+			}
+			// If the enemy isn't dead or at the end of the path,
+			// then let the towers shoot it
+			else {
 				for (IntPoint p : this.towers.keySet()) {
 					// System.out.println("Tower: " + p + " Fish: " + e.getLocation());
 					if (Math.hypot(e.location.getX() - p.getX(),
@@ -200,6 +226,23 @@ public class World {
 					}
 				}
 			}
+		}
+
+		// clear enemies from the dead/recycle list
+		for (Enemy e : dead) {
+			walkingEnemies.remove(e);
+			this.playerMoney += e.getValue();
+		}
+
+		for (Enemy e : recycled) {
+			// remove the enemy from the walking list
+			walkingEnemies.remove(e);
+			// put the fish back at the beginning of the path
+			e.reset((LinkedList<Tile>) level.getTilePath());
+			// we add the enemy to the front because we want it to release immediately
+			veterans.add(0, e);
+			// subtract a life from the player
+			this.playerLives -= 1;
 		}
 
 		// How do I update towers if they're not iterable??
@@ -372,13 +415,12 @@ public class World {
 	 * 
 	 * @param e the Enemy that makes it to the end of the path
 	 */
-	public void recycleEnemy(Enemy e) {
+	public void recycleEnemy(Enemy e, List<Enemy> toBeRecycled) {
 		// check that the enemy in question is actually walking
 		if (!walkingEnemies.contains(e)) {
 			throw new AssertionError("The given enemy isn't walking!");
 		}
-		walkingEnemies.remove(e);
-		waitingEnemies.add(e);
+		toBeRecycled.add(e);
 	}
 
 	/**
@@ -386,12 +428,12 @@ public class World {
 	 * 
 	 * @param e the Enemy to be removed.
 	 */
-	public void removeEnemy(Enemy e) {
+	public void removeEnemy(Enemy e, List<Enemy> toBeRemoved) {
 		// check that the enemy in question is actually walking
 		if (!walkingEnemies.contains(e)) {
 			throw new AssertionError("The given enemy isn't walking!");
 		}
-		walkingEnemies.remove(e);
+		toBeRemoved.add(e);
 	}
 
 }

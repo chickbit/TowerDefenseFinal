@@ -3,6 +3,11 @@ package edu.smith.cs.csc212.p5;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 import me.jjfoley.gfx.GFX;
 import me.jjfoley.gfx.IntPoint;
@@ -28,8 +33,8 @@ import me.jjfoley.gfx.TextBox;
  * 
  */
 public class TDGame extends GFX {
-	public static final int WIDTH = 600;
-	public static final int HEIGHT = 600;
+	public static final int UI_WIDTH = 50;
+	public static final int UI_HEIGHT = 50;
 	/**
 	 * Game size (visual). Try changing this to 600.
 	 */
@@ -71,31 +76,59 @@ public class TDGame extends GFX {
 	 */
 	int playerMoney;
 
+	TextBox moneyDisplay = new TextBox("$$$");
+	BufferedImage background;
+
 	/**
 	 * Construct a TDGame.
 	 * 
 	 * @param width  window width
 	 * @param height window height
 	 */
-	public TDGame() {
+	public TDGame() throws IOException {
 		// super(VISUAL_GRID_SIZE + BORDER * 2, VISUAL_GRID_SIZE + BORDER * 2 + TOP_PART);
-		super(VISUAL_GRID_SIZE, VISUAL_GRID_SIZE);
+		super(VISUAL_GRID_SIZE + UI_WIDTH, VISUAL_GRID_SIZE + UI_HEIGHT);
 		this.world = new World();
 		// this.level = new Level();
 		gameState.color = Color.WHITE;
 		gameState.setFont(TextBox.BOLD_FONT);
 		gameState.setFontSize(TOP_PART / 3.0);
 		topRect = new Rectangle2D.Double(0, 0, getWidth(), TOP_PART);
+		background = ImageIO.read(new File("fishBKG.png"));
+	}
+
+	public void drawUI(Graphics2D g) {
+		// this.playerMoney += 1;
+		Rectangle2D box = new Rectangle2D.Double(getWidth() - 100, 0, 100, UI_HEIGHT);
+		moneyDisplay.centerInside(box);
+
+		moneyDisplay.setString("$" + this.playerMoney);
+		moneyDisplay.setFontSize(UI_HEIGHT * .8);
+		moneyDisplay.draw(g);
+	}
+
+	public void draw(Graphics2D g) {
+		// draw the background
+		g.drawImage(background, UI_WIDTH, UI_HEIGHT, null);
+
+		drawUI(g);
+
+		Graphics2D board = (Graphics2D) g.create();
+
+		board.translate(50, 50);
+		drawGame(board);
+
+		board.dispose();
 	}
 
 	/**
 	 * Draw everything!
 	 * 
 	 */
-	public void draw(Graphics2D g) {
+	public void drawGame(Graphics2D g) {
 		// Draw the background
-		g.setColor(world.getBkgColor());
-		g.fillRect(0, 0, getWidth(), getHeight());
+		// g.setColor(world.getBkgColor());
+		// g.fillRect(0, 0, getWidth(), getHeight());
 		int w = getTileW();
 		int l = getTileH();
 		// Draw the path
@@ -143,7 +176,7 @@ public class TDGame extends GFX {
 	 * @return this returns the tile width.
 	 */
 	private int getTileW() {
-		return WIDTH / LOGICAL_GRID_SIZE;
+		return VISUAL_GRID_SIZE / LOGICAL_GRID_SIZE;
 	}
 
 	/**
@@ -152,12 +185,14 @@ public class TDGame extends GFX {
 	 * @return this returns the tile height.
 	 */
 	private int getTileH() {
-		return HEIGHT / LOGICAL_GRID_SIZE;
+		return VISUAL_GRID_SIZE / LOGICAL_GRID_SIZE;
 	}
 
 	// We are going to update the logic separately from the drawing.
 	@Override
 	public void update(double secondsSinceLastUpdate) {
+		this.playerLives = world.playerLives;
+		this.playerMoney = world.playerMoney;
 		// do stuff.
 		world.update(secondsSinceLastUpdate);
 	}
@@ -171,9 +206,9 @@ public class TDGame extends GFX {
 	public IntPoint mouseToGame(IntPoint mouse) {
 		if (mouse == null)
 			return null;
-		int x = mouse.x;
-		int y = mouse.y;
-		if (x > 0 && x <= VISUAL_GRID_SIZE && y > 0 && y <= VISUAL_GRID_SIZE) {
+		int x = mouse.x - UI_WIDTH;
+		int y = mouse.y - UI_HEIGHT;
+		if (x >= 0 && x <= VISUAL_GRID_SIZE && y >= 0 && y <= VISUAL_GRID_SIZE) {
 			int tx = x / getTileW();
 			int ty = y / getTileH();
 			return new IntPoint(tx, ty);
@@ -185,8 +220,9 @@ public class TDGame extends GFX {
 	 * Play the game!
 	 * 
 	 * @param args
+	 * @throws IOException
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		System.out.println("P5 Main Started!");
 		// Start the game with the hard-coded width and height.
 		GFX app = new TDGame();
